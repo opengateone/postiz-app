@@ -21,6 +21,10 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
    - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
    - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
+   - `apps/frontend/src/components/media/media.component.tsx`: category filter of the media library
+     (`ogMediaCategories`, component `components/og/og.media.categories.tsx`)
+   - `apps/frontend/src/app/(app)/(site)/analytics/page.tsx`: `<OgAnalytics>` tabs around `PlatformAnalytics`
+     (`ogAnalyticsTabs`, component `components/og/og.analytics.tsx`)
    - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
    - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`,
      `.claude/skills/og-new-module/` (Claude Code skill: new module from `modules/og/docs/new-module.md`)

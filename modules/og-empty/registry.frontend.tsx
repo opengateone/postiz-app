@@ -9,5 +9,19 @@ export interface OgMenuItem {
   role?: string[];
 }
 
+export interface OgMediaCategory {
+  id: string;
+  label: string;
+  path: string;
+}
+
+export interface OgAnalyticsTab {
+  id: string;
+  label: string;
+  component: FC;
+}
+
 export const ogMenuItems: OgMenuItem[] = [];
 export const ogPages: Record<string, FC> = {};
+export const ogMediaCategories: OgMediaCategory[] = [];
+export const ogAnalyticsTabs: OgAnalyticsTab[] = [];
