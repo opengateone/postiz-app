@@ -24,10 +24,33 @@ jobs:
   image:
     if: github.repository == 'opengateone/postiz-app'
     runs-on: ubuntu-latest
+    env:
+      OG_MODULES_TOKEN: ${{ secrets.OG_MODULES_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # Private OpenGate modules (opengateone/postiz-og-modules) -> modules/og. Needs a fine-grained
+      # token with read access to that repo in secret OG_MODULES_TOKEN. Without it the image is plain Postiz.
+      - name: Checkout OG modules
+        if: env.OG_MODULES_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: opengateone/postiz-og-modules
+          ref: ${{ vars.OG_MODULES_REF || 'main' }}
+          token: ${{ secrets.OG_MODULES_TOKEN }}
+          path: modules/og
+
+      - name: Merge OG Prisma models
+        run: |
+          if [ -f modules/og/scripts/merge-prisma.mjs ]; then
+            node modules/og/scripts/merge-prisma.mjs
+            echo "modules=$(git -C modules/og rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::modules/og missing (no OG_MODULES_TOKEN?): building plain Postiz"
+          fi
+        id: m
 
       - name: Versions
         id: v
@@ -53,7 +76,7 @@ jobs:
           file: Dockerfile.dev
           platforms: ${{ inputs.platforms || 'linux/amd64' }}
           build-args: |
-            NEXT_PUBLIC_VERSION=${{ steps.v.outputs.upstream }}-og.${{ steps.v.outputs.sha }}
+            NEXT_PUBLIC_VERSION=${{ steps.v.outputs.upstream }}-og.${{ steps.v.outputs.sha }}${{ steps.m.outputs.modules && format('.m{0}', steps.m.outputs.modules) || '' }}
           push: true
           provenance: false
           tags: |

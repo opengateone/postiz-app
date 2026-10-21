@@ -8,19 +8,29 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
 - `upstream` = `https://github.com/gitroomhq/postiz-app.git` (fetch only, push disabled)
 
 ## Rules (keep upstream merges painless)
-1. Our code lives in its own folders:
-   - `apps/frontend/src/components/og/**`, `apps/frontend/src/app/(app)/(site)/content-hub/**`
-   - `apps/backend/src/api/routes/og/**`
-   - `libraries/nestjs-libraries/src/og/**`
-   - `apps/orchestrator/src/og/**` (Temporal workflows / activities)
-2. Upstream files we touch, a few lines each, marked `// OG:`:
-   - `apps/frontend/src/components/layout/top.menu.tsx` (menu item)
-   - `apps/backend/src/api/api.module.ts` (controllers)
-   - `libraries/nestjs-libraries/src/database/prisma/schema.prisma` (our models at the end, section `// --- OG ---`)
-   - orchestrator module registering our workflows
-3. Never alter upstream tables or columns; link with `organizationId`.
+1. Our features live in the **private** repo `opengateone/postiz-og-modules`, checked out at `modules/og/`
+   (gitignored here). `modules/og-empty/` is the fallback: without the private repo the fork builds as plain Postiz.
+   - `modules/og/registry.backend.ts`: Nest modules + controllers (`ogBackendModules`, `ogAuthenticatedControllers`, `ogPublicControllers`)
+   - `modules/og/registry.frontend.tsx`: sidebar items (`ogMenuItems`) + pages (`ogPages`, served at `/m/<slug>`)
+   - `modules/og/<module>/prisma/*.prisma`: models, merged into the Postiz schema at build time by
+     `node modules/og/scripts/merge-prisma.mjs` (CI does it; `--remove` restores the upstream schema)
+2. Hooks in upstream files, a few lines each, marked `OG fork`:
+   - `tsconfig.base.json`: alias `@og/*` -> `modules/og/*`, fallback `modules/og-empty/*`
+   - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
+   - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
+   - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
+   - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`
+3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`.
 4. Never reformat / rename upstream files. Do not edit upstream workflows; ours are `og-*.yml`.
 5. Follow upstream `CLAUDE.md` (DTO >> Controller >> Service >> Repository, pnpm, Tailwind 3).
+
+## Local dev with the modules
+```bash
+git clone git@github.com:opengateone/postiz-og-modules.git modules/og
+node modules/og/scripts/merge-prisma.mjs     # adds our models to schema.prisma (do not commit)
+pnpm install && pnpm run dev
+node modules/og/scripts/merge-prisma.mjs --remove   # before committing in the fork
+```
 
 ## Sync with upstream
 ```bash
@@ -34,7 +44,10 @@ git push -u origin sync/<tag>        # CI builds an image -> deploy Staging
 Sync every 2-4 weeks; read the upstream release notes first (breaking changes happen, e.g. Temporal in v2.12).
 
 ## Image and deploy
-- CI: `.github/workflows/og-image.yml` on every push to `og` (and tags `og-*`):
+- CI: `.github/workflows/og-image.yml` on every push to `og` (and tags `og-*`). It checks out
+  `opengateone/postiz-og-modules` (secret `OG_MODULES_TOKEN`: fine-grained token, Contents read-only on that repo;
+  branch from variable `OG_MODULES_REF`, default `main`) and merges the Prisma models. Pushing the modules repo does
+  not build: re-run the workflow (Actions > OG Build Image > Run workflow).
   - `ghcr.io/opengateone/postiz-app:og-<sha>`
   - `ghcr.io/opengateone/postiz-app:<upstream-tag>-og.<run>`
   - `ghcr.io/opengateone/postiz-app:og-latest`
@@ -44,5 +57,6 @@ Sync every 2-4 weeks; read the upstream release notes first (breaking changes ha
   `docker compose exec postiz-postgres pg_dump -U postiz-user postiz-db-local > backup_$(date +%F).sql`
 
 ## License
-AGPL-3.0: people using this modified version over the network must be able to get its source.
-Keep this repository public (or link the source in the app).
+AGPL-3.0. Our modules are built into this image, so they are covered too: the source (fork + modules) is owed to
+people who use this Postiz over the network and ask for it. It does not have to be published to everyone, so the
+modules repo stays private. Do not give the app to outside users without being ready to hand them the source.
