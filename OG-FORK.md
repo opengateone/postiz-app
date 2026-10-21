@@ -19,18 +19,25 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
    - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
    - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
-   - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`
+   - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`
 3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`.
 4. Never reformat / rename upstream files. Do not edit upstream workflows; ours are `og-*.yml`.
 5. Follow upstream `CLAUDE.md` (DTO >> Controller >> Service >> Repository, pnpm, Tailwind 3).
 
 ## Local dev with the modules
 ```bash
-git clone git@github.com:opengateone/postiz-og-modules.git modules/og
-node modules/og/scripts/merge-prisma.mjs     # adds our models to schema.prisma (do not commit)
-pnpm install && pnpm run dev
-node modules/og/scripts/merge-prisma.mjs --remove   # before committing in the fork
+git clone -b og git@github.com:opengateone/postiz-app.git && cd postiz-app
+./og-setup.sh            # modules/og clone, Prisma merge, .env, docker-compose.dev services, pnpm install, db push
+pnpm run dev             # http://localhost:4200
 ```
+`og-setup.sh` is safe to re-run (`--no-docker`, `--no-install`, `--ref <modules branch>`): it pulls the modules and
+re-merges Prisma, never overwrites `.env`. It also creates `CLAUDE.local.md` (gitignored, imports `OG-FORK.md` and
+`modules/og/CLAUDE.md` for Claude Code) and a pre-commit hook that refuses a merged `schema.prisma`.
+AI context for the modules: `modules/og/AGENTS.md`, `modules/og/docs/`.
+
+Manual equivalent: `git clone git@github.com:opengateone/postiz-og-modules.git modules/og`,
+`node modules/og/scripts/merge-prisma.mjs`, `pnpm install`; before committing in the fork run
+`node modules/og/scripts/merge-prisma.mjs --remove`.
 
 ## Sync with upstream
 ```bash
