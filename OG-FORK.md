@@ -19,6 +19,7 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
    - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
    - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
+   - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
    - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`
 3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`.
 4. Never reformat / rename upstream files. Do not edit upstream workflows; ours are `og-*.yml`.
