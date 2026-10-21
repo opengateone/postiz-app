@@ -1,3 +1,44 @@
+<!-- OG fork: OpenGate block, keep it at the top and self-contained (upstream README below is untouched) -->
+> [!NOTE]
+> **OpenGate fork** of Postiz (branch `og`) with private modules (Content Hub, ...) in `modules/og`.
+> Fork rules and upstream sync: [`OG-FORK.md`](OG-FORK.md). Production deploy: [`deploy/og/README.md`](deploy/og/README.md).
+
+## Cài đặt (OpenGate)
+
+**Cần:** Git, Node 22 (`>=22.12 <23`), Docker + Compose v2, quyền đọc repo private `opengateone/postiz-og-modules`
+(SSH key trên GitHub hoặc `gh auth login`). pnpm tự bật qua corepack nếu chưa có. Không có quyền module thì app
+vẫn chạy như Postiz gốc.
+
+```bash
+git clone -b og git@github.com:opengateone/postiz-app.git
+cd postiz-app
+./og-setup.sh        # clone modules/og, merge Prisma, tạo .env, chạy Postgres/Redis/Temporal, pnpm install, db push
+pnpm run dev
+```
+
+| | URL |
+|---|---|
+| Frontend | http://localhost:4200 (đăng ký tài khoản đầu tiên) |
+| Backend | http://localhost:3000 |
+| Temporal UI | http://localhost:8080 |
+| Content Hub | http://localhost:4200/m/content-hub |
+
+`og-setup.sh` chạy lại được nhiều lần (không ghi đè `.env`):
+`--no-docker` (đã có services), `--no-install`, `--ref <branch module>`. Cập nhật module mới nhất: `./og-setup.sh --no-docker`.
+
+**Lưu ý khi code**
+- `modules/og` là git repo riêng: commit/push module ở đó (`git -C modules/og ...`), hook của fork thì commit ở đây.
+- Không commit `schema.prisma` đã merge model module (pre-commit hook chặn). Trước khi commit fork:
+  `node modules/og/scripts/merge-prisma.mjs --remove`.
+- Env Content Hub (`APIFY_TOKEN`, `HUB_*`): [`modules/og/content-hub/README.md`](modules/og/content-hub/README.md).
+
+**Dùng AI để code** (Claude Code, Codex, Cursor...): `og-setup.sh` tạo `CLAUDE.local.md` để Claude Code tự đọc ngữ
+cảnh fork + module. Tài liệu cho AI: `CLAUDE.md` (luật upstream), `modules/og/AGENTS.md` (luật + bản đồ module),
+`modules/og/docs/architecture.md`, `modules/og/docs/new-module.md`.
+
+---
+<!-- /OG fork -->
+
 <p align="center">
   <a href="https://postiz.com/" target="_blank">
   <picture>
