@@ -36,6 +36,10 @@ pnpm run dev
 cảnh fork + module. Tài liệu cho AI: `CLAUDE.md` (luật upstream), `modules/og/AGENTS.md` (luật + bản đồ module),
 `modules/og/docs/architecture.md`, `modules/og/docs/new-module.md`.
 
+**Tạo module mới:** làm theo [`modules/og/docs/new-module.md`](modules/og/docs/new-module.md) (từng bước + code mẫu:
+Prisma, backend, trang `/m/<slug>`, đăng ký registry, tài liệu, kiểm tra). Với Claude Code gõ
+`/og-new-module <slug> <mô tả>` ở thư mục gốc fork.
+
 ---
 <!-- /OG fork -->
 

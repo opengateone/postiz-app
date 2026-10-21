@@ -20,7 +20,8 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
    - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
    - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
-   - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`
+   - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`,
+     `.claude/skills/og-new-module/` (Claude Code skill: new module from `modules/og/docs/new-module.md`)
 3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`.
 4. Never reformat / rename upstream files. Do not edit upstream workflows; ours are `og-*.yml`.
 5. Follow upstream `CLAUDE.md` (DTO >> Controller >> Service >> Repository, pnpm, Tailwind 3).
