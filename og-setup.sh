@@ -172,11 +172,15 @@ if git diff --cached --name-only | grep -qx "$f" && git show ":$f" | grep -q 'OG
   echo "schema.prisma contains the OG module models. Run: node modules/og/scripts/merge-prisma.mjs --remove && git add $f"
   exit 1
 fi
+if [ -s .og/rebranded.txt ]; then
+  echo "Working tree is rebranded (modules/og/scripts/rebrand.mjs). Run: node modules/og/scripts/rebrand.mjs --remove"
+  exit 1
+fi
 SH
   chmod +x "$HOOK"
   echo "pre-commit guard installed"
-elif ! grep -q 'OG MODULES' "$HOOK"; then
-  warn "$HOOK already exists: add the schema.prisma check from og-setup.sh by hand"
+elif ! grep -q 'rebranded.txt' "$HOOK"; then
+  warn "$HOOK already exists: add the schema.prisma / rebrand checks from og-setup.sh by hand"
 fi
 
 step "Done"

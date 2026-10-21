@@ -42,10 +42,11 @@ jobs:
           token: ${{ secrets.OG_MODULES_TOKEN }}
           path: modules/og
 
-      - name: Merge OG Prisma models
+      - name: Merge OG Prisma models and branding
         run: |
           if [ -f modules/og/scripts/merge-prisma.mjs ]; then
             node modules/og/scripts/merge-prisma.mjs
+            [ -f modules/og/scripts/rebrand.mjs ] && node modules/og/scripts/rebrand.mjs
             echo "modules=$(git -C modules/og rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::modules/og missing (no OG_MODULES_TOKEN?): building plain Postiz"

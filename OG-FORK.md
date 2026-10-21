@@ -14,6 +14,8 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `modules/og/registry.frontend.tsx`: sidebar items (`ogMenuItems`) + pages (`ogPages`, served at `/m/<slug>`)
    - `modules/og/<module>/prisma/*.prisma`: models, merged into the Postiz schema at build time by
      `node modules/og/scripts/merge-prisma.mjs` (CI does it; `--remove` restores the upstream schema)
+   - `modules/og/branding/`: name, logos, favicons; `node modules/og/scripts/rebrand.mjs` swaps the Postiz name / logos /
+     postiz.com links in the working tree at build time (CI does it; `--remove` restores the upstream files)
 2. Hooks in upstream files, a few lines each, marked `OG fork`:
    - `tsconfig.base.json`: alias `@og/*` -> `modules/og/*`, fallback `modules/og-empty/*`
    - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
@@ -22,7 +24,8 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
    - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`,
      `.claude/skills/og-new-module/` (Claude Code skill: new module from `modules/og/docs/new-module.md`)
-3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`.
+3. Never alter upstream tables or columns; link with `organizationId`. Never commit the merged `schema.prisma`
+   or rebranded files (pre-commit hook from `og-setup.sh` blocks both).
 4. Never reformat / rename upstream files. Do not edit upstream workflows; ours are `og-*.yml`.
 5. Follow upstream `CLAUDE.md` (DTO >> Controller >> Service >> Repository, pnpm, Tailwind 3).
 
