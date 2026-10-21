@@ -26,7 +26,7 @@ services:
       - postiz-config:/config/
       - postiz-uploads:/uploads/
     ports:
-      - '127.0.0.1:${POSTIZ_PORT:-4007}:5000'
+      - '${POSTIZ_BIND:-127.0.0.1}:${POSTIZ_PORT:-4007}:5000'
     networks: [postiz-network, temporal-network]
     depends_on:
       postiz-postgres: { condition: service_healthy }
