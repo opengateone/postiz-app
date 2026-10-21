@@ -4,7 +4,7 @@
 #   git clone -b og git@github.com:opengateone/postiz-app.git && cd postiz-app && ./og-setup.sh
 #
 # Steps (safe to re-run; only schema.prisma is rewritten, .env is never overwritten):
-#   1. checks git / node 22 / pnpm / docker
+#   1. checks git / node 22 (stops if another version) / pnpm (installs it if missing) / docker
 #   2. clones the private modules repo into modules/og (or pulls it if already there)
 #   3. merges the module Prisma models into schema.prisma (never commit that file merged)
 #   4. creates .env for local dev (random JWT_SECRET, DB / Redis / Temporal of docker-compose.dev.yaml)
@@ -45,10 +45,18 @@ step "Checking tools"
 command -v git >/dev/null || die "git is missing"
 command -v node >/dev/null || die "node is missing (need 22.12+ <23, e.g. 'nvm install 22')"
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-[ "$NODE_MAJOR" = 22 ] || warn "node $(node -v): package.json wants >=22.12 <23 ('nvm use 22'). Continuing."
+[ "$NODE_MAJOR" = 22 ] || die "node $(node -v) found, package.json needs >=22.12 <23. Install it with nvm:
+       curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+       . ~/.nvm/nvm.sh && nvm install 22 && nvm use 22      (new shells: nvm alias default 22)
+       then re-run ./og-setup.sh"
 if ! command -v pnpm >/dev/null; then
-  warn "pnpm missing, enabling it with corepack"
-  corepack enable && corepack prepare pnpm@10.6.1 --activate || die "install pnpm 10.6.1: npm i -g pnpm@10.6.1"
+  warn "pnpm missing, installing pnpm 10.6.1"
+  if command -v corepack >/dev/null; then
+    corepack enable && corepack prepare pnpm@10.6.1 --activate
+  else
+    npm i -g pnpm@10.6.1
+  fi
+  command -v pnpm >/dev/null || die "could not install pnpm: run 'npm i -g pnpm@10.6.1' (node from nvm needs no sudo)"
 fi
 if [ "$DOCKER" = 1 ]; then
   command -v docker >/dev/null && docker compose version >/dev/null 2>&1 || die "docker + compose v2 needed (or pass --no-docker)"
