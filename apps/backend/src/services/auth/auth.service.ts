@@ -152,6 +152,14 @@ export class AuthService {
       return user;
     }
 
+    // OG fork: with sign-up closed, an account an admin created (modules/og/accounts) signs in with the same email
+    if (process.env.DISABLE_REGISTRATION === 'true' && providerUser.email) {
+      const invited = await this._userService.getUserByEmail(providerUser.email);
+      if (invited) {
+        return invited;
+      }
+    }
+
     if (!(await this.canRegister(provider))) {
       throw new Error('Registration is disabled');
     }

@@ -25,6 +25,9 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
      (`ogMediaCategories`, component `components/og/og.media.categories.tsx`)
    - `apps/frontend/src/app/(app)/(site)/analytics/page.tsx`: `<OgAnalytics>` tabs around `PlatformAnalytics`
      (`ogAnalyticsTabs`, component `components/og/og.analytics.tsx`)
+   - `apps/backend/src/services/auth/auth.service.ts` (`loginOrRegisterProvider`): with `DISABLE_REGISTRATION=true`,
+     a Google / provider sign-in with no linked account uses the LOCAL account with the same email (accounts created by
+     an admin in `modules/og/accounts`); without one the sign-in is still refused
    - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
    - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`,
      `.claude/skills/og-new-module/` (Claude Code skill: new module from `modules/og/docs/new-module.md`)
