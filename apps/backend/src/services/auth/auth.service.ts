@@ -170,11 +170,9 @@ export class AuthService {
     }
 
     // OG fork: with sign-up closed, an account an admin created (modules/og/accounts) signs in with the same email
-    if ((process.env.DISABLE_REGISTRATION === 'true' || process.env.OG_SINGLE_WORKSPACE === 'true') && providerUser.email) {
-      const invited = await this._userService.getUserByEmail(providerUser.email);
-      if (invited) {
-        return invited;
-      }
+    const ogLocal = await this.ogLocalAccount(providerUser.email);
+    if (ogLocal) {
+      return ogLocal;
     }
 
     if (!(await this.canRegister(provider))) {
@@ -345,7 +343,21 @@ export class AuthService {
       return { jwt: await this.jwt(checkExists) };
     }
 
+    // OG fork: same email fallback as loginOrRegisterProvider, so the sign-up form is not shown
+    const ogLocal = await this.ogLocalAccount(user.email);
+    if (ogLocal) {
+      return { jwt: await this.jwt(ogLocal) };
+    }
+
     return { token };
+  }
+
+  // OG fork: sign-up closed -> the LOCAL account an admin created (modules/og/accounts) with this email, if any
+  private async ogLocalAccount(email?: string) {
+    if (!email || (process.env.DISABLE_REGISTRATION !== 'true' && process.env.OG_SINGLE_WORKSPACE !== 'true')) {
+      return null;
+    }
+    return this._userService.getUserByEmail(email);
   }
 
   private async jwt(user: User) {

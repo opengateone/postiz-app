@@ -25,7 +25,7 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
      (`ogMediaCategories`, component `components/og/og.media.categories.tsx`)
    - `apps/frontend/src/app/(app)/(site)/analytics/page.tsx`: `<OgAnalytics>` tabs around `PlatformAnalytics`
      (`ogAnalyticsTabs`, component `components/og/og.analytics.tsx`)
-   - `apps/backend/src/services/auth/auth.service.ts` (`loginOrRegisterProvider`): with `DISABLE_REGISTRATION=true`,
+   - `apps/backend/src/services/auth/auth.service.ts` (`loginOrRegisterProvider`, `checkExists`, `ogLocalAccount`): with `DISABLE_REGISTRATION=true`,
      a Google / provider sign-in with no linked account uses the LOCAL account with the same email (accounts created by
      an admin in `modules/og/accounts`); without one the sign-in is still refused. `OG_SINGLE_WORKSPACE=true`: no new
      workspace after the first (`canRegister`), and a new provider account from a team invite sent to its email joins
