@@ -34,4 +34,5 @@ Tags come from the GitHub Actions run (`og-<sha>`, `<upstream>-og.<run>`, `og-la
 docker compose logs -f postiz
 docker compose --profile tools up -d temporal-ui    # Temporal UI on 127.0.0.1:8080 (SSH tunnel to view)
 gunzip -c backups/<file>.sql.gz | docker compose exec -T postiz-postgres psql -U $POSTGRES_USER $POSTGRES_DB   # restore
+ssh -N -L 5432:127.0.0.1:5432 <server>             # Postgres on 127.0.0.1:${POSTGRES_PORT:-5432} of the server; DB tools connect to localhost:5432
 ```

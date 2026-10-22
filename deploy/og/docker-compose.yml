@@ -43,6 +43,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-volume:/var/lib/postgresql/data
+    ports:
+      # localhost only: reach it through an SSH tunnel (ssh -L 5432:127.0.0.1:5432 <server>)
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     networks: [postiz-network]
     healthcheck:
       test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
