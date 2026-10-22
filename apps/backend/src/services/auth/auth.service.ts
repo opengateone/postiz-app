@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { Provider, User } from '@prisma/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
@@ -17,9 +17,17 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _emailService: EmailService,
-    private _providerManager: AuthProviderManager
+    private _providerManager: AuthProviderManager,
+    // OG fork: modules/og/accounts (OG_SINGLE_WORKSPACE invites), absent without the modules
+    @Optional() @Inject('OG_INVITED_MEMBERS') private _ogInvitedMembers?: {
+      joinFromInvite(provider: Provider, providerUser: { id: string; email: string }, invite: { orgId: string; role: 'USER' | 'ADMIN'; id: string; email?: string }, ip: string, userAgent: string): Promise<string | null>;
+    }
   ) {}
   async canRegister(provider: string) {
+    // OG fork: OG_SINGLE_WORKSPACE=true, no new workspace after the first one (any provider)
+    if (process.env.OG_SINGLE_WORKSPACE === 'true') {
+      return (await this._organizationService.getCount()) === 0;
+    }
     if (
       process.env.DISABLE_REGISTRATION !== 'true' ||
       provider === Provider.GENERIC
@@ -35,7 +43,7 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string; email?: string } // OG fork: email
   ) {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
@@ -94,7 +102,8 @@ export class AuthService {
       provider,
       body as CreateOrgUserDto,
       ip,
-      userAgent
+      userAgent,
+      addToOrg // OG fork
     );
 
     const addedOrg =
@@ -135,7 +144,8 @@ export class AuthService {
     provider: Provider,
     body: CreateOrgUserDto,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string; email?: string } // OG fork
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -152,8 +162,15 @@ export class AuthService {
       return user;
     }
 
+    // OG fork: OG_SINGLE_WORKSPACE=true, a new account from a team invite sent to this email joins only that workspace
+    const ogInvited = addToOrg && typeof addToOrg !== 'boolean' &&
+      (await this._ogInvitedMembers?.joinFromInvite(provider, providerUser, addToOrg, ip, userAgent));
+    if (ogInvited) {
+      return this._userService.getUserById(ogInvited);
+    }
+
     // OG fork: with sign-up closed, an account an admin created (modules/og/accounts) signs in with the same email
-    if (process.env.DISABLE_REGISTRATION === 'true' && providerUser.email) {
+    if ((process.env.DISABLE_REGISTRATION === 'true' || process.env.OG_SINGLE_WORKSPACE === 'true') && providerUser.email) {
       const invited = await this._userService.getUserByEmail(providerUser.email);
       if (invited) {
         return invited;
