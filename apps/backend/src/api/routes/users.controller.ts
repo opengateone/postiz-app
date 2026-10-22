@@ -325,8 +325,12 @@ export class UsersController {
   }
 
   @Get('/delete-account-info')
-  getDeleteAccountInfo(@GetUserFromRequest() user: User) {
-    return this._userService.getDeleteAccountInfo(user.id);
+  async getDeleteAccountInfo(@GetUserFromRequest() user: User) {
+    // OG fork: OG_SINGLE_WORKSPACE=true, account deletion is off (the frontend hides the button)
+    return {
+      ...(await this._userService.getDeleteAccountInfo(user.id)),
+      disabled: process.env.OG_SINGLE_WORKSPACE === 'true',
+    };
   }
 
   @Post('/delete-account')
@@ -335,6 +339,11 @@ export class UsersController {
     @Req() req: Request,
     @Res({ passthrough: true }) response: Response
   ) {
+    // OG fork: OG_SINGLE_WORKSPACE=true, deleting the owner would delete the shared workspace and drop its members
+    if (process.env.OG_SINGLE_WORKSPACE === 'true') {
+      throw new HttpException('Account deletion is disabled', 403);
+    }
+
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
     if (impersonate) {
       throw new HttpException(

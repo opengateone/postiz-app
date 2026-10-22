@@ -30,6 +30,9 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
      an admin in `modules/og/accounts`); without one the sign-in is still refused. `OG_SINGLE_WORKSPACE=true`: no new
      workspace after the first (`canRegister`), and a new provider account from a team invite sent to its email joins
      only the inviting workspace (`OG_INVITED_MEMBERS` from `modules/og/accounts`, `@Optional`)
+   - `apps/backend/src/api/routes/users.controller.ts` (`deleteAccount`, `getDeleteAccountInfo`) +
+     `apps/frontend/src/components/settings/delete-account.component.tsx`: `OG_SINGLE_WORKSPACE=true` turns off
+     "Delete account" (403, button hidden), since deleting the owner deletes the shared workspace and drops its members
    - `README.md`: OpenGate install block at the top (`<!-- OG fork -->` ... `<!-- /OG fork -->`)
    - new files: `apps/frontend/src/app/(app)/(site)/m/[...slug]/page.tsx`, `apps/frontend/src/components/og/`, `og-setup.sh`,
      `.claude/skills/og-new-module/` (Claude Code skill: new module from `modules/og/docs/new-module.md`)
