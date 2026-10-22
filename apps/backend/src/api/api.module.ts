@@ -56,6 +56,8 @@ import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farc
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
+// OG fork: private OpenGate modules (modules/og, falls back to modules/og-empty)
+import { ogAuthenticatedControllers, ogBackendModules, ogPublicControllers } from '@og/registry.backend';
 
 const authenticatedController = [
   UsersController,
@@ -78,9 +80,10 @@ const authenticatedController = [
   OAuthAuthorizedController,
   AnnouncementsController,
   AdminController,
+  ...ogAuthenticatedControllers,
 ];
 @Module({
-  imports: [UploadModule],
+  imports: [UploadModule, ...ogBackendModules],
   controllers: process.env.MCP_ONLY
     ? [
         RootController,
@@ -100,6 +103,7 @@ const authenticatedController = [
         OAuthController,
         MediaWidgetController,
         ClippingWidgetController,
+        ...ogPublicControllers,
         ...authenticatedController,
       ],
   providers: [

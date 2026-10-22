@@ -5,6 +5,8 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
+// OG fork: sidebar items of the private OpenGate modules
+import { ogMenuItems } from '@og/registry.frontend';
 
 interface MenuItemInterface {
   name: string;
@@ -102,6 +104,7 @@ export const useMenuItem = () => {
       ),
       path: '/media',
     },
+    ...ogMenuItems,
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
   const secondMenu = [
