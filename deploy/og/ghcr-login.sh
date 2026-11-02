@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time: lets this server pull the private image ghcr.io/opengateone/postiz-app.
+# One-time: lets this server pull the private image ghcr.io/opengateone/postiz-og.
 # Token: GitHub > Settings > Developer settings > Personal access tokens (classic), scope read:packages only.
 # The token is read hidden and handed to docker on stdin; it is never written to a file here
 # (docker keeps the login in ~/.docker/config.json).

@@ -23,16 +23,14 @@ Nginx: `proxy_pass http://127.0.0.1:4007;` with `client_max_body_size 1g;` and W
 (`Upgrade`, `Connection`) on the server block.
 
 ## Update / roll back
-The server never builds: GitHub Actions (`.github/workflows/og-image.yml`) builds the image with the private modules and
-pushes it to GHCR on every push to `og`, every push to `postiz-og-modules` `main` (its `build-image.yml` starts the
-fork workflow) or a manual run. The run summary prints the deploy command.
+The server never builds: GitHub Actions in `postiz-og-modules` (`build-image.yml`) builds the fork + modules and pushes
+the private image `ghcr.io/opengateone/postiz-og` on every push to its `main`; after a fork-only change run it by hand
+(`gh workflow run build-image.yml -R opengateone/postiz-og-modules`). The run summary prints the deploy command.
 ```bash
 ./deploy.sh v2.25.1-og.42     # pull (stops here if it fails) -> backup DB -> switch POSTIZ_IMAGE -> up -d -> prune dangling
 ./deploy.sh v2.25.1-og.41     # roll back to the previous image (restore the DB backup if the schema changed)
 ```
-Tags: `og-<fork sha>-m<modules sha>`, `<upstream>-og.<run>`, `og-latest`. Pin a tag in production.
-CI secrets: `OG_MODULES_TOKEN` in the fork (read the modules repo; without it the workflow fails instead of pushing a plain
-Postiz image) and `OG_CI_TOKEN` in the modules repo (start the fork workflow).
+Tags: `og-<fork sha>-m<modules sha>`, `<upstream>-og.<run>`, `og-latest`. Pin a tag in production. No CI secret is needed.
 
 ## Useful
 ```bash

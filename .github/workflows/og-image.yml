@@ -1,13 +1,11 @@
 # OpenGate fork: build the Postiz image (with our additions) and push it to GHCR.
 # New file only: upstream workflows stay untouched so syncing never conflicts here.
-# The servers never build: they pull these images (deploy/og/deploy.sh <tag>). A push to the modules repo
-# starts this workflow through its own workflow (postiz-og-modules/.github/workflows/build-image.yml).
+# Production images are built by the modules repo (postiz-og-modules/.github/workflows/build-image.yml ->
+# ghcr.io/opengateone/postiz-og, no extra token needed). This workflow is manual only: a plain Postiz build
+# (allow_plain), or an OG build into ghcr.io/opengateone/postiz-app when secret OG_MODULES_TOKEN is set.
 name: "OG Build Image"
 
 on:
-  push:
-    branches: [og]
-    tags: ['og-*']
   workflow_dispatch:
     inputs:
       platforms:

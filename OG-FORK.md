@@ -69,15 +69,14 @@ Sync every 2-4 weeks; read the upstream release notes first (breaking changes ha
 
 ## Image and deploy
 Servers never build images (a build on the 8 GB `og` host ran it out of memory twice): GitHub Actions builds, servers pull.
-- CI: `.github/workflows/og-image.yml` on every push to `og`, tags `og-*`, a manual run, and every push to
-  `postiz-og-modules` `main` (its `.github/workflows/build-image.yml` runs `gh workflow run og-image.yml` with secret
-  `OG_CI_TOKEN`). It checks out `opengateone/postiz-og-modules` (secret `OG_MODULES_TOKEN`; branch from input
-  `modules_ref`, variable `OG_MODULES_REF` or `main`), merges the Prisma models, rebrands, builds `Dockerfile.dev`.
-  Without the modules it fails (manual `allow_plain` builds plain Postiz). One fine-grained token can serve both secrets:
-  repositories `postiz-og-modules` (Contents: read) + `postiz-app` (Actions: read and write).
-  - `ghcr.io/opengateone/postiz-app:og-<sha>-m<modules sha>`
-  - `ghcr.io/opengateone/postiz-app:<upstream-tag>-og.<run>` (printed in the run summary as the deploy command)
-  - `ghcr.io/opengateone/postiz-app:og-latest`
+- CI: `postiz-og-modules/.github/workflows/build-image.yml`, on every push to the modules `main` and by hand
+  (`gh workflow run build-image.yml -R opengateone/postiz-og-modules [-f fork_ref=<branch|sha>]`, needed after a
+  fork-only change). It checks out this public fork (`og`) and the modules into `modules/og`, merges the Prisma models,
+  rebrands, builds `Dockerfile.dev` and pushes the private package `ghcr.io/opengateone/postiz-og` with the modules
+  repo's own `GITHUB_TOKEN` (no extra secret):
+  - `og-<fork sha>-m<modules sha>`, `<upstream-tag>-og.<run>` (printed in the run summary as the deploy command), `og-latest`
+- `.github/workflows/og-image.yml` here is manual only (plain Postiz with `allow_plain`, or an OG build into
+  `ghcr.io/opengateone/postiz-app` if secret `OG_MODULES_TOKEN` is ever set).
 - Server (`deploy/og/`): `./ghcr-login.sh` once (classic token, `read:packages`: the package is private because the
   image holds the private modules), then `./deploy.sh <tag>`: pull (nothing changes if it fails) -> `pg_dump` backup ->
   `POSTIZ_IMAGE=<image>` in `.env` -> `up -d` -> prune dangling images. Roll back = `./deploy.sh <previous tag>`.

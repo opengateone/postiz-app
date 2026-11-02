@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Usage: ./deploy.sh [image-tag | full-image]   e.g. ./deploy.sh v2.25.1-og.42   or   ./deploy.sh og-latest
-# Images are built by GitHub Actions (.github/workflows/og-image.yml) and pulled here: the server never builds.
+# Images are built by GitHub Actions (postiz-og-modules: build-image.yml) and pulled here: the server never builds.
 # Pulls the image first (nothing changes if that fails), backs up Postgres, switches POSTIZ_IMAGE, restarts Postiz.
 set -euo pipefail
 cd "$(dirname "$0")"
 [ -f .env ] || { echo ".env missing (copy .env.example)"; exit 1; }
 set -a; . ./.env; set +a
 
-DEFAULT_REPO=ghcr.io/opengateone/postiz-app
+DEFAULT_REPO=ghcr.io/opengateone/postiz-og
 image="${POSTIZ_IMAGE:-$DEFAULT_REPO:og-latest}"
 if [ "${1:-}" != "" ]; then
   case "$1" in
