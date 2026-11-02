@@ -118,6 +118,11 @@ env += `
 # Content Hub: crawling needs an Apify token; the scheduled crawl stays off unless HUB_SYNC_ENABLED=true
 APIFY_TOKEN=""
 HUB_SYNC_ENABLED="false"
+# Booking KOL/KOC: TikTok Shop Partner app (see modules/og/kol-booking/README.md)
+TIKTOK_SHOP_APP_KEY=""
+TIKTOK_SHOP_APP_SECRET=""
+TIKTOK_SHOP_SERVICE_ID=""
+KOLB_AGENT_ENABLED="true"
 `;
 fs.writeFileSync(file, env);
 NODE
