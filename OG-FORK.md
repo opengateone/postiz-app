@@ -68,17 +68,19 @@ git push -u origin sync/<tag>        # CI builds an image -> deploy Staging
 Sync every 2-4 weeks; read the upstream release notes first (breaking changes happen, e.g. Temporal in v2.12).
 
 ## Image and deploy
-- CI: `.github/workflows/og-image.yml` on every push to `og` (and tags `og-*`). It checks out
-  `opengateone/postiz-og-modules` (secret `OG_MODULES_TOKEN`: fine-grained token, Contents read-only on that repo;
-  branch from variable `OG_MODULES_REF`, default `main`) and merges the Prisma models. Pushing the modules repo does
-  not build: re-run the workflow (Actions > OG Build Image > Run workflow).
-  - `ghcr.io/opengateone/postiz-app:og-<sha>`
-  - `ghcr.io/opengateone/postiz-app:<upstream-tag>-og.<run>`
+Servers never build images (a build on the 8 GB `og` host ran it out of memory twice): GitHub Actions builds, servers pull.
+- CI: `.github/workflows/og-image.yml` on every push to `og`, tags `og-*`, a manual run, and every push to
+  `postiz-og-modules` `main` (its `.github/workflows/build-image.yml` runs `gh workflow run og-image.yml` with secret
+  `OG_CI_TOKEN`). It checks out `opengateone/postiz-og-modules` (secret `OG_MODULES_TOKEN`; branch from input
+  `modules_ref`, variable `OG_MODULES_REF` or `main`), merges the Prisma models, rebrands, builds `Dockerfile.dev`.
+  Without the modules it fails (manual `allow_plain` builds plain Postiz). One fine-grained token can serve both secrets:
+  repositories `postiz-og-modules` (Contents: read) + `postiz-app` (Actions: read and write).
+  - `ghcr.io/opengateone/postiz-app:og-<sha>-m<modules sha>`
+  - `ghcr.io/opengateone/postiz-app:<upstream-tag>-og.<run>` (printed in the run summary as the deploy command)
   - `ghcr.io/opengateone/postiz-app:og-latest`
-- Server: `docker compose -f docker-compose.yaml -f docker-compose.og.yaml up -d`, with
-  `POSTIZ_IMAGE=<pinned tag>` in `.env`. Roll back = previous tag + `up -d`.
-- Back up Postgres before every image change (schema may change):
-  `docker compose exec postiz-postgres pg_dump -U postiz-user postiz-db-local > backup_$(date +%F).sql`
+- Server (`deploy/og/`): `./ghcr-login.sh` once (classic token, `read:packages`: the package is private because the
+  image holds the private modules), then `./deploy.sh <tag>`: pull (nothing changes if it fails) -> `pg_dump` backup ->
+  `POSTIZ_IMAGE=<image>` in `.env` -> `up -d` -> prune dangling images. Roll back = `./deploy.sh <previous tag>`.
 
 ## License
 AGPL-3.0. Our modules are built into this image, so they are covered too: the source (fork + modules) is owed to

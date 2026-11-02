@@ -7,8 +7,8 @@ Server needs Docker + Compose v2, 4 vCPU / 8 GB RAM recommended, and a domain wi
 # copy this folder (deploy/og) to the server, e.g. /opt/postiz-og
 cd /opt/postiz-og
 cp .env.example .env && chmod 600 .env       # fill URLs + secrets (openssl rand -hex 32)
-echo <github-token-read:packages> | docker login ghcr.io -u <github-user> --password-stdin   # only if the package is private
-./deploy.sh                                   # pulls the image in POSTIZ_IMAGE and starts everything
+./ghcr-login.sh                               # once: classic token with read:packages (the image holds the private modules)
+./deploy.sh og-latest                         # pulls the image and starts everything
 ```
 Open `https://<domain>`, create the admin account, then set `DISABLE_REGISTRATION=true` and run `./deploy.sh` again.
 
@@ -23,11 +23,16 @@ Nginx: `proxy_pass http://127.0.0.1:4007;` with `client_max_body_size 1g;` and W
 (`Upgrade`, `Connection`) on the server block.
 
 ## Update / roll back
+The server never builds: GitHub Actions (`.github/workflows/og-image.yml`) builds the image with the private modules and
+pushes it to GHCR on every push to `og`, every push to `postiz-og-modules` `main` (its `build-image.yml` starts the
+fork workflow) or a manual run. The run summary prints the deploy command.
 ```bash
-./deploy.sh v2.25.1-og.4      # backup DB -> switch tag -> pull -> up -d
-./deploy.sh v2.25.1-og.3      # roll back to the previous image (restore the DB backup if the schema changed)
+./deploy.sh v2.25.1-og.42     # pull (stops here if it fails) -> backup DB -> switch POSTIZ_IMAGE -> up -d -> prune dangling
+./deploy.sh v2.25.1-og.41     # roll back to the previous image (restore the DB backup if the schema changed)
 ```
-Tags come from the GitHub Actions run (`og-<sha>`, `<upstream>-og.<run>`, `og-latest`). Pin a tag in production.
+Tags: `og-<fork sha>-m<modules sha>`, `<upstream>-og.<run>`, `og-latest`. Pin a tag in production.
+CI secrets: `OG_MODULES_TOKEN` in the fork (read the modules repo; without it the workflow fails instead of pushing a plain
+Postiz image) and `OG_CI_TOKEN` in the modules repo (start the fork workflow).
 
 ## Useful
 ```bash

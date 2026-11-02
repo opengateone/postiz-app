@@ -1,5 +1,7 @@
 # OpenGate fork: build the Postiz image (with our additions) and push it to GHCR.
 # New file only: upstream workflows stay untouched so syncing never conflicts here.
+# The servers never build: they pull these images (deploy/og/deploy.sh <tag>). A push to the modules repo
+# starts this workflow through its own workflow (postiz-og-modules/.github/workflows/build-image.yml).
 name: "OG Build Image"
 
 on:
@@ -11,6 +13,13 @@ on:
       platforms:
         description: 'linux/amd64 or linux/amd64,linux/arm64'
         default: 'linux/amd64'
+      modules_ref:
+        description: 'postiz-og-modules branch / sha (default: variable OG_MODULES_REF or main)'
+        default: ''
+      allow_plain:
+        description: 'Build without modules/og (plain Postiz) when OG_MODULES_TOKEN is missing'
+        type: boolean
+        default: false
 
 concurrency:
   group: og-image-${{ github.ref }}
@@ -38,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: opengateone/postiz-og-modules
-          ref: ${{ vars.OG_MODULES_REF || 'main' }}
+          ref: ${{ inputs.modules_ref || vars.OG_MODULES_REF || 'main' }}
           token: ${{ secrets.OG_MODULES_TOKEN }}
           path: modules/og
 
@@ -48,8 +57,11 @@ jobs:
             node modules/og/scripts/merge-prisma.mjs
             [ -f modules/og/scripts/rebrand.mjs ] && node modules/og/scripts/rebrand.mjs
             echo "modules=$(git -C modules/og rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "${{ inputs.allow_plain }}" = "true" ]; then
             echo "::warning::modules/og missing (no OG_MODULES_TOKEN?): building plain Postiz"
+          else
+            # a plain image tagged og-latest would drop every OG module on the next deploy
+            echo "::error::modules/og missing: set secret OG_MODULES_TOKEN (or run with allow_plain)"; exit 1
           fi
         id: m
 
@@ -81,8 +93,18 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ steps.v.outputs.image }}:og-${{ steps.v.outputs.sha }}
+            ${{ steps.v.outputs.image }}:og-${{ steps.v.outputs.sha }}${{ steps.m.outputs.modules && format('-m{0}', steps.m.outputs.modules) || '' }}
             ${{ steps.v.outputs.image }}:${{ steps.v.outputs.upstream }}-og.${{ github.run_number }}
             ${{ github.ref_type == 'tag' && format('{0}:{1}', steps.v.outputs.image, github.ref_name) || format('{0}:og-latest', steps.v.outputs.image) }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy command
+        run: |
+          {
+            echo "### Deploy"
+            echo '```'
+            echo "./deploy.sh ${{ steps.v.outputs.upstream }}-og.${{ github.run_number }}"
+            echo '```'
+            echo "modules: ${{ steps.m.outputs.modules || 'none (plain Postiz)' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
