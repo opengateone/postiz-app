@@ -37,6 +37,8 @@ if [ "$image" != "${POSTIZ_IMAGE:-}" ]; then
   grep -q '^POSTIZ_IMAGE=' .env || echo "POSTIZ_IMAGE=$image" >> .env
   echo "image: $image"
 fi
+# the old value was exported with the rest of .env above and would win over the file in compose
+export POSTIZ_IMAGE="$image"
 
 docker compose up -d < /dev/null
 docker compose ps
