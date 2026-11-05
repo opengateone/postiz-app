@@ -21,6 +21,8 @@ OpenGate additions (Content Hub, ...). Branch **`og`** is ours; `main` mirrors u
    - `apps/backend/src/api/api.module.ts`: imports / controllers from `@og/registry.backend`
    - `apps/frontend/src/components/layout/top.menu.tsx`: `...ogMenuItems`
    - `apps/frontend/tailwind.config.cjs`: `../../modules/og/**` in `content`
+   - `apps/frontend/next.config.js` + `Dockerfile.dev`: `OG_SKIP_TYPECHECK=true` in the image build skips next build's
+     type check (its memory peak killed builds on the 8 GB server); run `tsc` before committing instead
    - `apps/frontend/src/components/media/media.component.tsx`: category filter of the media library
      (`ogMediaCategories`, component `components/og/og.media.categories.tsx`)
    - `apps/frontend/src/app/(app)/(site)/analytics/page.tsx`: `<OgAnalytics>` tabs around `PlatformAnalytics`
