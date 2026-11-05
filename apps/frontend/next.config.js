@@ -21,6 +21,9 @@ const nextConfig = {
     ];
   },
   reactStrictMode: false,
+  // OG: the server image build skips next build's type check (its peak memory killed builds on the 8 GB host); types are
+  // checked before every commit with tsc
+  typescript: { ignoreBuildErrors: process.env.OG_SKIP_TYPECHECK === 'true' },
   transpilePackages: ['crypto-hash'],
   // Enable production sourcemaps for Sentry
   productionBrowserSourceMaps: true,

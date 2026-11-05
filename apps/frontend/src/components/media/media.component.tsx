@@ -54,6 +54,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
+import { OgMediaCategories, ogMediaPath } from '@gitroom/frontend/components/og/og.media.categories'; // OG fork
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -221,21 +222,23 @@ export const MediaBox: FC<{
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 300);
+  // OG fork: category filter (images / videos / AI videos) from the OpenGate modules, '' = all
+  const [ogCategory, setOgCategory] = useState('');
   const fetch = useFetch();
   const modals = useModals();
   const toaster = useToaster();
   useEffect(() => {
     setPage(0);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, ogCategory]);
   const loadMedia = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1) });
     if (debouncedSearch.trim()) {
       params.set('search', debouncedSearch.trim());
     }
-    return (await fetch(`/media?${params.toString()}`)).json();
-  }, [page, debouncedSearch]);
+    return (await fetch(ogMediaPath(ogCategory, params))).json();
+  }, [page, debouncedSearch, ogCategory]);
   const { data, mutate, isLoading } = useSWR(
-    `get-media-${page}-${debouncedSearch}`,
+    `get-media-${page}-${debouncedSearch}-${ogCategory}`,
     loadMedia
   );
   const [selected, setSelected] = useState([]);
@@ -478,9 +481,19 @@ export const MediaBox: FC<{
             !isLoading &&
               !data?.results?.length &&
               !debouncedSearch &&
+              !ogCategory &&
               'hidden'
           )}
         >
+          {!type && (
+            <OgMediaCategories
+              value={ogCategory}
+              onChange={(id) => {
+                setOgCategory(id);
+                setPage(0);
+              }}
+            />
+          )}
           <div className="flex-1 mobile:basis-full">
             <input
               type="text"
@@ -561,7 +574,7 @@ export const MediaBox: FC<{
               <>
                 <NoMediaIcon />
                 <div className="text-[20px] font-[600]">
-                  {debouncedSearch
+                  {debouncedSearch || ogCategory
                     ? t(
                         'no_media_match_search',
                         'No media matches your search'

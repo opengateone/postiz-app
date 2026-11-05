@@ -1,0 +1,6 @@
+# OpenGate override: run our fork's image instead of the upstream one.
+#   docker compose -f docker-compose.yaml -f docker-compose.og.yaml up -d
+# Pin a tag in .env for production: POSTIZ_IMAGE=ghcr.io/opengateone/postiz-app:v2.25.1-og.3
+services:
+  postiz:
+    image: ${POSTIZ_IMAGE:-ghcr.io/opengateone/postiz-app:og-latest}

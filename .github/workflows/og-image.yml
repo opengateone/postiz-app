@@ -1,0 +1,108 @@
+# OpenGate fork: build the Postiz image (with our additions) and push it to GHCR.
+# New file only: upstream workflows stay untouched so syncing never conflicts here.
+# Production images are built by the modules repo (postiz-og-modules/.github/workflows/build-image.yml ->
+# ghcr.io/opengateone/postiz-og, no extra token needed). This workflow is manual only: a plain Postiz build
+# (allow_plain), or an OG build into ghcr.io/opengateone/postiz-app when secret OG_MODULES_TOKEN is set.
+name: "OG Build Image"
+
+on:
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'linux/amd64 or linux/amd64,linux/arm64'
+        default: 'linux/amd64'
+      modules_ref:
+        description: 'postiz-og-modules branch / sha (default: variable OG_MODULES_REF or main)'
+        default: ''
+      allow_plain:
+        description: 'Build without modules/og (plain Postiz) when OG_MODULES_TOKEN is missing'
+        type: boolean
+        default: false
+
+concurrency:
+  group: og-image-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    if: github.repository == 'opengateone/postiz-app'
+    runs-on: ubuntu-latest
+    env:
+      OG_MODULES_TOKEN: ${{ secrets.OG_MODULES_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Private OpenGate modules (opengateone/postiz-og-modules) -> modules/og. Needs a fine-grained
+      # token with read access to that repo in secret OG_MODULES_TOKEN. Without it the image is plain Postiz.
+      - name: Checkout OG modules
+        if: env.OG_MODULES_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: opengateone/postiz-og-modules
+          ref: ${{ inputs.modules_ref || vars.OG_MODULES_REF || 'main' }}
+          token: ${{ secrets.OG_MODULES_TOKEN }}
+          path: modules/og
+
+      - name: Merge OG Prisma models and branding
+        run: |
+          if [ -f modules/og/scripts/merge-prisma.mjs ]; then
+            node modules/og/scripts/merge-prisma.mjs
+            [ -f modules/og/scripts/rebrand.mjs ] && node modules/og/scripts/rebrand.mjs
+            echo "modules=$(git -C modules/og rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.allow_plain }}" = "true" ]; then
+            echo "::warning::modules/og missing (no OG_MODULES_TOKEN?): building plain Postiz"
+          else
+            # a plain image tagged og-latest would drop every OG module on the next deploy
+            echo "::error::modules/og missing: set secret OG_MODULES_TOKEN (or run with allow_plain)"; exit 1
+          fi
+        id: m
+
+      - name: Versions
+        id: v
+        run: |
+          UPSTREAM=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || cat version.txt)
+          echo "upstream=${UPSTREAM}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.dev
+          platforms: ${{ inputs.platforms || 'linux/amd64' }}
+          build-args: |
+            NEXT_PUBLIC_VERSION=${{ steps.v.outputs.upstream }}-og.${{ steps.v.outputs.sha }}${{ steps.m.outputs.modules && format('.m{0}', steps.m.outputs.modules) || '' }}
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.v.outputs.image }}:og-${{ steps.v.outputs.sha }}${{ steps.m.outputs.modules && format('-m{0}', steps.m.outputs.modules) || '' }}
+            ${{ steps.v.outputs.image }}:${{ steps.v.outputs.upstream }}-og.${{ github.run_number }}
+            ${{ github.ref_type == 'tag' && format('{0}:{1}', steps.v.outputs.image, github.ref_name) || format('{0}:og-latest', steps.v.outputs.image) }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy command
+        run: |
+          {
+            echo "### Deploy"
+            echo '```'
+            echo "./deploy.sh ${{ steps.v.outputs.upstream }}-og.${{ github.run_number }}"
+            echo '```'
+            echo "modules: ${{ steps.m.outputs.modules || 'none (plain Postiz)' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

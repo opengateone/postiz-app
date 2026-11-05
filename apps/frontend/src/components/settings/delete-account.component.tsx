@@ -14,6 +14,7 @@ import { TrashIcon } from '@gitroom/frontend/components/ui/icons';
 interface DeleteAccountInfo {
   hasSubscription: boolean;
   hasAdditionalMembers: boolean;
+  disabled?: boolean; // OG fork
 }
 
 export const useDeleteAccountInfo = () => {
@@ -39,7 +40,7 @@ const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
   const toaster = useToaster();
   const { isSecured } = useVariables();
   const [loading, setLoading] = useState(false);
-  const { mutate } = useDeleteAccountInfo();
+  const { data, mutate } = useDeleteAccountInfo();
 
   const deleteAccount = useCallback(async () => {
     const info = await mutate();
@@ -114,6 +115,11 @@ const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
       </div>
     </div>
   );
+
+  // OG fork: account deletion turned off by the backend (OG_SINGLE_WORKSPACE)
+  if (!data || data.disabled) {
+    return null;
+  }
 
   if (isLink) {
     return (
